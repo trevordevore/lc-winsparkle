@@ -9,6 +9,7 @@ library community.livecode.trevordevore.winsparkle
 
   use com.livecode.foreign
   use com.livecode.engine
+  use com.livecode.file
 
   metadata title is "WinSparkle"
   metadata author is "TrevorDeVore"
@@ -53,6 +54,27 @@ library community.livecode.trevordevore.winsparkle
         returns nothing binds to "c:winsparkle>win_sparkle_check_update_with_ui_and_install!cdecl"
   private foreign handler win_sparkle_check_update_without_ui() \
         returns nothing binds to "c:winsparkle>win_sparkle_check_update_without_ui!cdecl"
+
+
+  foreign handler type win_sparkle_error_callback_t() returns nothing
+  foreign handler type win_sparkle_can_shutdown_callback_t() returns CBool
+  foreign handler type win_sparkle_shutdown_request_callback_t() returns nothing
+  foreign handler type win_sparkle_did_find_update_callback_t() returns nothing
+  foreign handler type win_sparkle_did_not_find_update_callback_t() returns nothing
+  foreign handler type win_sparkle_update_cancelled_callback_t() returns nothing
+
+  foreign handler win_sparkle_set_error_callback (in pHandler as win_sparkle_error_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_error_callback!cdecl"
+  foreign handler win_sparkle_set_can_shutdown_callback (in pHandler as win_sparkle_can_shutdown_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_can_shutdown_callback!cdecl"
+  foreign handler win_sparkle_set_shutdown_request_callback (in pHandler as win_sparkle_shutdown_request_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_shutdown_request_callback!cdecl"
+  foreign handler win_sparkle_set_did_find_update_callback (in pHandler as win_sparkle_did_find_update_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_did_find_update_callback!cdecl"
+  foreign handler win_sparkle_set_did_not_find_update_callback (in pHandler as win_sparkle_did_not_find_update_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_did_not_find_update_callback!cdecl"
+  foreign handler win_sparkle_set_update_cancelled_callback (in pHandler as win_sparkle_update_cancelled_callback_t) \
+        returns nothing binds to "c:winsparkle>win_sparkle_set_update_cancelled_callback!cdecl"
 
 
   /* VARIABLES */
@@ -196,19 +218,6 @@ library community.livecode.trevordevore.winsparkle
 
 
   /**
-  Summary: Appropriately schedules or cancels the update checking timer according to the preferences for time interval and automatic checks.
-
-  Description:
-  This call does not change the date of the next check, but only the internal NSTimer.
-  */
-  public handler sparkleResetUpdateCycle() returns nothing
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
   Summary: Returns the time in seconds the last check for updates was performed.
 
   Returns: Seconds or empty if no check has been performed.
@@ -259,89 +268,6 @@ library community.livecode.trevordevore.winsparkle
 
 
   /**
-  Summary: Returns whether to allow Sparkle to pop up.
-
-  Description:
-  This may be used to prevent Sparkle from interrupting a setup assistant.
-  */
-  public handler sparkleMayCheckForUpdates() returns Boolean
-    unsafe
-
-    end unsafe
-  end handler
-
-  /**
-  Summary:
-
-  */
-  public handler sparkleSetMayCheckForUpdates(in pBoolean as Boolean) returns nothing
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
-  Summary:
-  */
-  public handler sparkleAutomaticallyDownloadsUpdates() returns Boolean
-    unsafe
-
-    end unsafe
-  end handler
-
-  /**
-  Summary:
-
-  */
-  public handler sparkleSetAutomaticallyDownloadsUpdates(in pBoolean as Boolean) returns nothing
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
-  Summary:
-  */
-  public handler sparkleSendsSystemProfile() returns Boolean
-    unsafe
-
-    end unsafe
-  end handler
-
-  /**
-  Summary: Sets the value in the user defaults.
-
-  */
-  public handler sparkleSetSendsSystemProfile(in pBoolean as Boolean) returns nothing
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
-  Summary:
-  */
-  public handler sparkleUpdateInProgress() returns Boolean
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
-  Summary:
-
-  Description:
-  You must specify the URL of the appcast as the `SUFeedURL` key in either the Info.plist or the user defaults.
-  */
-  public handler sparkleFeedUrl() returns String
-
-  end handler
-
-  /**
   Summary: Sets the feed url.
 
   Description:
@@ -384,42 +310,6 @@ library community.livecode.trevordevore.winsparkle
     end unsafe
   end handler
 
-
-  /**
-  Summary:
-
-  */
-  public handler sparkleUserAgentString() returns String
-
-
-    unsafe
-
-    end unsafe
-
-  end handler
-
-  /**
-  Summary: Sets the user agent string
-
-  Description:
-  This handler sets the user agent string that Sparkle sends to the server when it checks
-  for updates. The value will persist for the current session of the application.
-
-  */
-  public handler sparkleSetUserAgentString(in pUserAgent as String) returns nothing
-    unsafe
-
-    end unsafe
-  end handler
-
-
-  /**
-  Summary: Retruns the decryption password used for extracting updates shipped as Apple Disk Images (dmg).
-
-  */
-  public handler sparkleDecryptionPassword() returns String
-
-  end handler
 
   /**
   Summary: Sets the DSA public key.
@@ -528,138 +418,42 @@ library community.livecode.trevordevore.winsparkle
     return tArray
   end handler
 
-
-  /* DELEGATES */
-  unsafe handler SetSUUpdaterInformalDelegate() returns nothing
-    -- variable tDelegate as optional ObjcObject
-    -- variable tForeignHandlers as List
-    -- variable tMapping as Array
-
-    -- put [Delegate_SUUpdaterDidFinishLoadingAppcast, \
-    --       Delegate_SUUpdaterDidFindValidUpdate, \
-    --       Delegate_SUUpdaterDidNotFindUpdate, \
-    --       Delegate_SUUpdaterWillInstallUpdate, \
-    --       Delegate_SUUpdaterWillRelaunchApplication, \
-    --       Delegate_SUUpdaterDidRelaunchApplication, \
-    --       Delegate_SUUpdaterWillShowModalAlert, \
-    --       Delegate_SUUpdaterDidShowModalAlert, \
-    --       Delegate_SUUpdaterUserDidCancelDownload, \
-    --       Delegate_SUUpdaterWillInstallUpdateOnQuit, \
-    --       Delegate_SUUpdaterDidCancelInstallUpdateOnQuit, \
-    --       Delegate_SUUpdaterDidAbortWithError, \
-    --       Delegate_SUUpdaterShouldPostponeRelaunchForUpdate] into tForeignHandlers
-
-    -- put {"updater:didFinishLoadingAppcast:": DidFinishLoadingAppcast, \
-    --       "updater:didFindValidUpdate:": DidFindValidUpdate, \
-    --       "updaterDidNotFindUpdate:": DidNotFindUpdate, \
-    --       "updater:willInstallUpdate:": WillInstallUpdate, \
-    --       "updaterWillRelaunchApplication:": WillRelaunchApplication, \
-    --       "updaterDidRelaunchApplication:": DidRelaunchApplication, \
-    --       "updaterWillShowModalAlert:": WillShowModalAlert, \
-    --       "updaterDidShowModalAlert:": DidShowModalAlert, \
-    --       "userDidCancelDownload:": UserDidCancelDownload, \
-    --       "updater:willInstallUpdateOnQuit:immediateInstallationInvocation:": WillInstallUpdateOnQuit, \
-    --       "updater:didCancelInstallUpdateOnQuit:": DidCancelInstallUpdateOnQuit, \
-    --       "updater:didAbortWithError:": DidAbortWithError, \
-    --       "updagter:shouldPostponeRelaunchForUpdate:untilInvoking:": ShouldPostponeRelaunchForUpdate} into tMapping
-
-    -- put CreateObjcInformalDelegate( \
-    --           tForeignHandlers, \
-    --           tMapping) into tDelegate
-
-    -- if tDelegate is not nothing then
-    --   put tDelegate into mSUUpdaterDelegate
-    --   ObjC_SUUpdaterSetDelegate(pSUUpdater, mSUUpdaterDelegate)
-    -- end if
+  private handler SetupCallbacks() returns nothing
+    unsafe
+      win_sparkle_set_error_callback(DidAbortWithError)
+      win_sparkle_set_can_shutdown_callback(CanShutdownForUpdate)
+      win_sparkle_set_shutdown_request_callback(ShutdownRequest)
+      win_sparkle_set_did_find_update_callback(DidFindValidUpdate)
+      win_sparkle_set_did_not_find_update_callback(DidNotFindUpdate)
+      win_sparkle_set_update_cancelled_callback(UpdateCancelled)
+    end unsafe
   end handler
 
-  private handler DidFinishLoadingAppcast() returns nothing
-    -- variable tAppCastItems as Array
-
-    -- put AppCastItemsToArray(pAppcast) into tAppCastItems
-    -- post "sparkleFinishedLoadingAppcast" with [tAppCastItems]
+  handler DidFindValidUpdate() returns nothing
+    post "sparkleFoundUpdate"
   end handler
 
-  private handler DidFindValidUpdate() returns nothing
-    -- variable tItem as Array
-
-    -- put AppCastItemToArray(pAppCastItem) into tItem
-    -- post "sparkleFoundUpdate" with [tItem]
+  handler DidNotFindUpdate() returns nothing
+    post "sparkleDidNotFindUpdate"
   end handler
 
-  private handler DidNotFindUpdate() returns nothing
-    -- post "sparkleDidNotFindUpdate"
+  handler ShutdownRequest() returns nothing
+    post "sparkleShutdownApplication"
   end handler
 
-  private handler WillInstallUpdate() returns nothing
-    -- variable tItem as Array
-
-    -- put AppCastItemToArray(pAppCastItem) into tItem
-    -- post "sparkleWillInstallUpdate" with [tItem]
+  handler UpdateCancelled() returns nothing
+    post "sparkleDownloadCanceled"
   end handler
 
-  private handler WillRelaunchApplication() returns nothing
-    -- post "sparkleWillRelaunchApplication"
-  end handler
-
-  // SUUpdater delegate must be set before applicationDidFinishLaunching: to catch this event.
-  // I don't believe this will ever be sent.
-  private handler DidRelaunchApplication() returns nothing
-    -- post "sparkleDidRelaunchApplication"
-  end handler
-
-  private handler WillShowModalAlert() returns nothing
-    -- post "sparkleWillShowModalAlert"
-  end handler
-
-  private handler DidShowModalAlert() returns nothing
-    -- post "sparkleDidShowModalAlert"
-  end handler
-
-  private handler UserDidCancelDownload() returns nothing
-    -- post "sparkleDownloadCanceledByUser"
-  end handler
-
-  // - (void)updater:(SUUpdater *)updater willInstallUpdateOnQuit:(SUAppcastItem *)item immediateInstallationInvocation:(NSInvocation *)invocation;
-  private handler WillInstallUpdateOnQuit() returns nothing
-    -- variable tItem as Array
-
-    -- put AppCastItemToArray(pAppCastItem) into tItem
-    -- post "sparkleWillInstallUpdateOnQuit" with [tItem]
-  end handler
-
-  // - (void)updater:(SUUpdater *)updater didCancelInstallUpdateOnQuit:(SUAppcastItem *)item;
-  private handler DidCancelInstallUpdateOnQuit() returns nothing
-    -- variable tItem as Array
-
-    -- put AppCastItemToArray(pAppCastItem) into tItem
-    -- post "sparkelDidCancelInstallUpdateOnQuit" with [tItem]
-  end handler
-
-  // - (void)updater:(SUUpdater *)updater didAbortWithError:(NSError *)error;
-  private handler DidAbortWithError() returns nothing
-    -- variable tFailureReason as optional ObjcObject
-    -- variable tDescription as optional ObjcObject
-    -- variable tError as Array
-
-    -- unsafe
-    --   put ObjC_NSErrorLocalizedFailureReason(pNSError) into tFailureReason
-    --   put ObjC_NSErrorLocalizedDescription(pNSError) into tDescription
-    -- end unsafe
-
-    -- if tDescription is not nothing then
-    --   put StringFromNSString(tDescription) into tError["description"]
-    -- end if
-    -- if tFailureReason is not nothing then
-    --   put StringFromNSString(tFailureReason) into tError["failure reason"]
-    -- end if
-
-    -- post "sparkleDidAbortWithError" with [tError]
+  handler DidAbortWithError() returns nothing
+    post "sparkleDidAbortWithError"
   end handler
 
   // TODO: Send callback to LCS which allows developer to return a Boolean.
-  private handler ShouldPostponeRelaunchForUpdate() returns Boolean
-    // "sparkleShouldPostponeRelaunchForUpdate"
+  handler CanShutdownForUpdate() returns Boolean
+    variable tData as Data
+    set the contents of file "C:/Users/Trevor DeVore/lcb_log.txt" to tData
+    -- post "sparkleShouldPostponeRelaunchForUpdate"
     return false
   end handler
 
