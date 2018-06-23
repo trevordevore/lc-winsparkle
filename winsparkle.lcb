@@ -57,7 +57,7 @@ library community.livecode.trevordevore.winsparkle
 
 
   foreign handler type win_sparkle_error_callback_t() returns nothing
-  foreign handler type win_sparkle_can_shutdown_callback_t() returns CBool
+  foreign handler type win_sparkle_can_shutdown_callback_t() returns CInt
   foreign handler type win_sparkle_shutdown_request_callback_t() returns nothing
   foreign handler type win_sparkle_did_find_update_callback_t() returns nothing
   foreign handler type win_sparkle_did_not_find_update_callback_t() returns nothing
@@ -98,6 +98,7 @@ library community.livecode.trevordevore.winsparkle
   */
   public handler sparkleInitialize() returns nothing
     unsafe
+      SetupCallbacks()
       win_sparkle_init()
     end unsafe
   end handler
@@ -449,12 +450,9 @@ library community.livecode.trevordevore.winsparkle
     post "sparkleDidAbortWithError"
   end handler
 
-  // TODO: Send callback to LCS which allows developer to return a Boolean.
-  handler CanShutdownForUpdate() returns Boolean
-    variable tData as Data
-    set the contents of file "C:/Users/Trevor DeVore/lcb_log.txt" to tData
-    -- post "sparkleShouldPostponeRelaunchForUpdate"
-    return false
+  handler CanShutdownForUpdate() returns Number
+    post "sparkleShouldPostponeRelaunchForUpdate"
+    return 0
   end handler
 
 end library
